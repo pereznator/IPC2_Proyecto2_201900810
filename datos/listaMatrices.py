@@ -1,4 +1,4 @@
-from matriz import Matriz
+from .matriz import Matriz
 
 class listaMatrices():
     def __init__(self):
@@ -15,6 +15,7 @@ class listaMatrices():
         else:
             aux = self.ultimo
             self.ultimo = aux.siguiente = Matriz(nombre, filas, columnas, listaFilas)
+        self.cuenta += 1
 
     def recorrer(self):
         aux = self.primero

@@ -1,10 +1,11 @@
-from celda import Celda
+from .celda import Celda
 
 class Fila():
     def __init__(self):
         self.primero = None
         self.ultimo = None
         self.cuenta = 0
+        self.siguiente = None
 
     def vacia(self):
         return self.primero == None

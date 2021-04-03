@@ -1,6 +1,6 @@
 <matrices>
     <matriz>
-        <nombre>Jorgin</nombre>
+        <nombre>Matriz 1</nombre>
         <filas>5</filas>
         <columnas>5</columnas>
         <imagen>
@@ -12,15 +12,15 @@
         </imagen>
     </matriz>
     <matriz>
-        <nombre>Jorshgito</nombre>
+        <nombre>Matriz Fuck</nombre>
         <filas>5</filas>
-        <columnas>5</columnas>
+        <columnas>10</columnas>
         <imagen>
-        --*--
-        -***-
-        *****
-        -*-*-
-        --*--
+        --*----*--
+        -***--***-
+        **********
+        -*-*--*-*-
+        --*----*--
         </imagen>
     </matriz>
 </matrices>
