@@ -1,9 +1,12 @@
 from tkinter import *
 from tkinter import ttk, Entry
+from PIL import Image, ImageTk
 from tkinter.filedialog import askopenfilename
 from cargarArchivo import CargarArchivo
 from transformada import Transformada
 from conjuntos import Conjunto
+from reporte import Reporte
+from grafico import Grafico
 
 class Main():
     opcion = 0
@@ -16,7 +19,9 @@ class Main():
     matrix2 = None
 
     def __init__(self):
+        self.report = Reporte()
         self.desplegarInterfaz()
+
 
     def desplegarInterfaz(self):
         self.raiz = Tk()
@@ -35,9 +40,9 @@ class Main():
         opcion1.place(x=10, y=80)
         opcion2 = Button(miFrame, text='Operaciones', width=50, height=3, cursor='hand2', command=self.mostrarOperacionesFrame)
         opcion2.place(x=390, y=80)
-        opcion3 = Button(miFrame, text='Reportes', width=50, height=3, cursor='hand2')
+        opcion3 = Button(miFrame, text='Reportes', width=50, height=3, cursor='hand2', command=self.report.generarReporte)
         opcion3.place(x=775, y=80)
-        opcion4 = Button(miFrame, text='Ayuda', width=50, height=3, cursor='hand2')
+        opcion4 = Button(miFrame, text='Ayuda', width=50, height=3, cursor='hand2', command=self.ayuda)
         opcion4.place(x=1160, y=80)
         self.raiz.title('Editor de matrices')
         self.raiz.mainloop()
@@ -47,7 +52,27 @@ class Main():
         self.raiz.update()
         return (self.ancho/2) - (elemento.winfo_reqwidth()/2)
 
+    def esconderOpcion(self):
+        if self.opcion == 1:
+            self.cargarFrame.place_forget()
+        elif self.opcion == 2:
+            self.operacionesFrame.place_forget()
+        elif self.opcion == 3:
+            self.ayudaFrame.place_forget()
+
+    def ayuda(self):
+        self.esconderOpcion()
+        self.opcion = 3
+        self.ayudaFrame = Frame(self.raiz, width=self.ancho, height=650, bg='gray')
+        self.ayudaFrame.place(y=150)
+
+        Label(self.ayudaFrame, text='Nombre: Jorge Antonio Peréz Ordóñez', font=('Arial', 24), bg='gray').place(x=100, y=100)
+        Label(self.ayudaFrame, text='Carnet: 201900810', font=('Arial', 24), bg='gray').place(x=100, y=150)
+        Label(self.ayudaFrame, text='Carrera: Ingeniaría en Ciencias y Sistemas', font=('Arial', 24), bg='gray').place(x=100, y=200)
+        Button(self.ayudaFrame, text='Ver Documentación', width=80, height=3).place(x=100, y=250)
+
     def cargarArchivoFrame(self):
+        self.esconderOpcion()
         self.opcion = 1
         self.cargarFrame = Frame(self.raiz, width=self.ancho, height=650, bg='red')
         self.cargarFrame.place(y=150)
@@ -55,6 +80,7 @@ class Main():
             ruta = askopenfilename(initialdir='/', title='Seleccionar archivo', filetypes=(("xml files","*.xml"),("xml files","*.xml")))
             cargar = CargarArchivo(ruta)
             self.matrices = cargar.matrices
+            self.report.introducirMatrices(self.matrices)
         except:
             self.opcion = 0
             nombre = Label(self.cargarFrame, 'Ha ocurrido un error!', font=('Arial', 24))
@@ -63,8 +89,8 @@ class Main():
     def mostrarOperacionesFrame(self):
         if self.opcion == 0:
             return
+        self.esconderOpcion()
         self.opcion = 2
-        self.cargarFrame.pack_forget()
         self.operacionesFrame = Frame(self.raiz, width=self.ancho, height=650, bg='yellow')
         self.operacionesFrame.place(y=150)
         
@@ -117,20 +143,15 @@ class Main():
         Label(self.opFrame1, text='Resultado', font=('Arial', 16), bg='blue').place(x=1200, y=70)
         matrixFrame = Frame(self.opFrame1, width=510, height=410, bg='white')
         matrixFrame.place(x=350, y=100)
-        #Button(matrixFrame, text='h', width=100, height=80)
 
-        faux = self.matriz.listaFilas.primero
-        for f in range(self.matriz.listaFilas.cuenta):
-            caux = faux.primero
-            for c in range(faux.cuenta):
-                if caux.dato == '*':
-                    b = Button(matrixFrame, text='*', width=int(65/self.matriz.columnas), height=int(25/self.matriz.filas))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                else:
-                    b = Button(matrixFrame, text=' ', width=int(65/self.matriz.columnas), height=int(25/self.matriz.filas))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                caux = caux.siguiente
-            faux = faux.siguiente
+        graf = Grafico(self.matriz, False)
+        imagen = Image.open(graf.ruta)
+        imagen = imagen.resize((510, 420), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(imagen)
+        img = Label(matrixFrame, image=render)
+        img.image = render
+        img.place(x=-10, y=-10)
+
         
         self.resultadoFrame = Frame(self.opFrame1, width=510, height=410, bg='red')
         self.resultadoFrame.place(x=1000, y=100)
@@ -155,7 +176,8 @@ class Main():
         self.opImagen = 1
         tran = Transformada(self.matriz)
         tran.rotacionHorizontal()
-        self.desplegarResultado(tran.resultado)
+        self.report.nuevaOperacionSimple('Rotación Horizontal', self.matriz.nombre)
+        self.desplegarResultado(tran.resultado, 'rotacionHorizontal')
     
     def rotacionVertical(self):
         if self.matriz == None:
@@ -164,7 +186,8 @@ class Main():
         self.opImagen = 2
         tran = Transformada(self.matriz)
         tran.rotacionVertical()
-        self.desplegarResultado(tran.resultado)
+        self.report.nuevaOperacionSimple('Rotación Vertical', self.matriz.nombre)
+        self.desplegarResultado(tran.resultado, 'RotacionVertical')
 
     def transpuesta(self):
         if self.matriz == None:
@@ -173,7 +196,8 @@ class Main():
         self.opImagen = 3
         tran = Transformada(self.matriz)
         tran.transpuesta()
-        self.desplegarResultado(tran.resultado)
+        self.report.nuevaOperacionSimple('Transpuesta', self.matriz.nombre)
+        self.desplegarResultado(tran.resultado, 'Transpuesta')
 
     def limpiarZona(self):
         if self.matriz == None:
@@ -202,8 +226,12 @@ class Main():
             return
         coordenadas = {'x1': x1.get(), 'y1': y1.get(), 'x2': x2.get(), 'y2': y2.get()}
         tran = Transformada(self.matriz)
-        tran.limpiarZona(coordenadas)
-        self.desplegarResultado(tran.resultado)
+        try:
+            tran.limpiarZona(coordenadas)
+            self.report.nuevaOperacionSimple('Limpiar Zona', self.matriz.nombre)
+            self.desplegarResultado(tran.resultado, 'LimpiarZona')
+        except:
+            self.report.nuevoError('Coordenadas fuera del rango', 'Limpiar Zona', self.matriz.nombre)
 
     def agregarHorizontal(self):
         if self.matriz == None:
@@ -227,8 +255,12 @@ class Main():
     def horizonrtalOp(self, fila, x1, x2):
         datos = {'fila': fila.get(), 'x1': x1.get(), 'x2': x2.get()}
         tran = Transformada(self.matriz)
-        tran.agregarHorizontal(datos)
-        self.desplegarResultado(tran.resultado)
+        try:
+            tran.agregarHorizontal(datos)
+            self.report.nuevaOperacionSimple('Agregar Linea Horizontal', self.matriz.nombre)
+            self.desplegarResultado(tran.resultado, 'AgregarLineaHorizontal')
+        except:
+            self.report.nuevoError('Coordenadas fuera del rango', 'Agregar Linea Horizontal', self.matriz.nombre)
 
     def agregarVertical(self):
         if self.matriz == None:
@@ -252,8 +284,12 @@ class Main():
     def verticalOp(self, columna, y1, y2):
         datos = {'columna': columna.get(), 'y1': y1.get(), 'y2': y2.get()}
         tran = Transformada(self.matriz)
-        tran.agregarVertical(datos)
-        self.desplegarResultado(tran.resultado)
+        try:
+            tran.agregarVertical(datos)
+            self.report.nuevaOperacionSimple('Agregar Linea Vertical', self.matriz.nombre)
+            self.desplegarResultado(tran.resultado, 'AgregarLineaVetical')
+        except:
+            self.report.nuevoError('Coordenadas fuera del rango', 'Agregar Linea Vertical', self.matriz.nombre)
 
     def agregarRectangulo(self):
         if self.matriz == None:
@@ -280,8 +316,12 @@ class Main():
     def rectanguloOp(self, x, y, filas, columnas):
         datos = {'x': int(x.get()), 'y': int(y.get()), 'filas': int(filas.get()), 'columnas': int(columnas.get())}
         tran = Transformada(self.matriz)
-        tran.agregarRectangulo(datos)
-        self.desplegarResultado(tran.resultado)
+        try:
+            tran.agregarRectangulo(datos)
+            self.report.nuevaOperacionSimple('Agregar Rectangulo', self.matriz.nombre)
+            self.desplegarResultado(tran.resultado, 'AgregarRectangulo')
+        except:
+            self.report.nuevoError('Coordenadas fuera del rango', 'Agregar Rectangulo', self.matriz.nombre)
 
     def agregarTriangulo(self):
         if self.matriz == None:
@@ -311,19 +351,14 @@ class Main():
         tran.agregarTriangulo(datos)
         #self.desplegarResultado(tran.resultado)
 
-    def desplegarResultado(self, resultado):
-        f=0
-        for fila in resultado:
-            c=0
-            for celda in fila:
-                if celda['dato'] == '*':
-                    b = Button(self.resultadoFrame, text='*', width=int(65/self.matriz.columnas), height=int(25/self.matriz.filas))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                else:
-                    b = Button(self.resultadoFrame, text=' ', width=int(65/self.matriz.columnas), height=int(25/self.matriz.filas))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                c+=1
-            f+=1
+    def desplegarResultado(self, resultado, operacion):
+        graf = Grafico(resultado, True, self.matriz.nombre, operacion)
+        imagen = Image.open(graf.ruta)
+        imagen = imagen.resize((510, 420), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(imagen)
+        img = Label(self.resultadoFrame, image=render)
+        img.image = render
+        img.place(x=-10, y=-10)
 
     def desplegarDosImagenes(self):
         if self.opFrame1 != None:
@@ -379,73 +414,75 @@ class Main():
                     self.matrix2 = aux
             aux = aux.siguiente
 
+
         if esUno:
-            faux = self.matrix1.listaFilas.primero
-            for f in range(self.matrix1.listaFilas.cuenta):
-                caux = faux.primero
-                for c in range(faux.cuenta):
-                    if caux.dato == '*':
-                        b = Button(self.matrizUnoFrame, text='*', width=int(45/self.matrix1.columnas), height=int(20/self.matrix1.filas))
-                        b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                    else:
-                        b = Button(self.matrizUnoFrame, text=' ', width=int(45/self.matrix1.columnas), height=int(20/self.matrix1.filas))
-                        b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                    caux = caux.siguiente
-                faux = faux.siguiente
+            graf = Grafico(self.matrix1, False)
+            imagen = Image.open(graf.ruta)
+            imagen = imagen.resize((380, 410), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(imagen)
+            img = Label(self.matrizUnoFrame, image=render)
+            img.image = render
+            img.place(x=-10, y=-10)
         else:
-            faux = self.matrix2.listaFilas.primero
-            for f in range(self.matrix2.listaFilas.cuenta):
-                caux = faux.primero
-                for c in range(faux.cuenta):
-                    if caux.dato == '*':
-                        b = Button(self.matrizDosFrame, text='*', width=int(45/self.matrix2.columnas), height=int(20/self.matrix2.filas))
-                        b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                    else:
-                        b = Button(self.matrizDosFrame, text=' ', width=int(45/self.matrix2.columnas), height=int(20/self.matrix2.filas))
-                        b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                    caux = caux.siguiente
-                faux = faux.siguiente
+            graf = Grafico(self.matrix2, False)
+            imagen = Image.open(graf.ruta)
+            imagen = imagen.resize((380, 410), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(imagen)
+            img = Label(self.matrizDosFrame, image=render)
+            img.image = render
+            img.place(x=-10, y=-10)
 
     def union(self):
         if self.matrix1 == None or self.matrix2 == None:
             return
         res = Conjunto(self.matrix1, self.matrix2)
-        res.union()
-        self.imprimirConjResultado(res.resultado)
-    
+        try:
+            res.union()
+            self.report.nuevaOperacionCompleja('Unión', self.matrix1.nombre, self.matrix2.nombre)
+            self.imprimirConjResultado(res.resultado, self.matrix1.nombre+self.matrix2.nombre, 'Union')
+        except:
+            self.report.nuevoError('Matrices no compatibles', 'Union', self.matrix1.nombre+', '+self.matrix2.nombre)
+
     def interseccion(self):
         if self.matrix1 == None or self.matrix2 == None:
             return
         res = Conjunto(self.matrix1, self.matrix2)
-        res.interseccion()
-        self.imprimirConjResultado(res.resultado)
+        try:
+            res.interseccion()
+            self.report.nuevaOperacionCompleja('Intersección', self.matrix1.nombre, self.matrix2.nombre)
+            self.imprimirConjResultado(res.resultado, self.matrix1.nombre+self.matrix2.nombre, 'Interseccion')
+        except:
+            self.report.nuevoError('Matrices no compatibles', 'Interseccion', self.matrix1.nombre+', '+self.matrix2.nombre)
 
     def diferencia(self):
         if self.matrix1 == None or self.matrix2 == None:
             return
         res = Conjunto(self.matrix1, self.matrix2)
-        res.diferencia()
-        self.imprimirConjResultado(res.resultado)
+        try:
+            res.diferencia()
+            self.report.nuevaOperacionCompleja('Diferencia', self.matrix1.nombre, self.matrix2.nombre)
+            self.imprimirConjResultado(res.resultado, self.matrix1.nombre+self.matrix2.nombre, 'Diferencia')
+        except:
+            self.report.nuevoError('Matrices no compatibles', 'Diferencia', self.matrix1.nombre+', '+self.matrix2.nombre)
 
     def diferenciaSimetrica(self):
         if self.matrix1 == None or self.matrix2 == None:
             return
         res = Conjunto(self.matrix1, self.matrix2)
-        res.diferenciaSimetrica()
-        self.imprimirConjResultado(res.resultado)
+        try:
+            res.diferenciaSimetrica()
+            self.report.nuevaOperacionCompleja('Diferencia Simétrica', self.matrix1.nombre, self.matrix2.nombre)
+            self.imprimirConjResultado(res.resultado, self.matrix1.nombre+self.matrix2.nombre, 'DiferenciaSimetrica')
+        except:
+            self.report.nuevoError('Matrices no compatibles', 'Diferencia Simetrica', self.matrix1.nombre+', '+self.matrix2.nombre)
 
-    def imprimirConjResultado(self, resultado):
-        f=0
-        for fila in resultado:
-            c=0
-            for celda in fila:
-                if celda['dato'] == '*':
-                    b = Button(self.respuestaFrame, text='*', width=int(45/len(resultado[0])), height=int(20/len(resultado)))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                else:
-                    b = Button(self.respuestaFrame, text=' ', width=int(45/len(resultado[0])), height=int(20/len(resultado)))
-                    b.place(x=(c*b.winfo_reqwidth()), y=(f*b.winfo_reqheight()))
-                c+=1
-            f+=1
+    def imprimirConjResultado(self, resultado, nombre, operacion):
+        graf = Grafico(resultado, True, nombre, operacion)
+        imagen = Image.open(graf.ruta)
+        imagen = imagen.resize((380, 410), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(imagen)
+        img = Label(self.respuestaFrame, image=render)
+        img.image = render
+        img.place(x=-10, y=-10)
 
 m = Main()
